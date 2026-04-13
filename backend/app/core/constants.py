@@ -1,0 +1,25 @@
+from __future__ import annotations
+
+LAYER_PRIORITY = {
+    "RBI_MASTER": 1,
+    "CICRA": 2,
+    "RBI_CIRCULAR": 3,
+    "SOP": 4,
+}
+
+LAYER_LABELS = {
+    "RBI_MASTER": "RBI Master Direction",
+    "CICRA": "CICRA / Statutory Act",
+    "RBI_CIRCULAR": "RBI Circular",
+    "SOP": "Internal SOP",
+}
+
+CONSUMER_PENALTY_PER_DAY = 100
+REGULATOR_PENALTY_PER_DAY = 5000
+CI_WINDOW_DAYS = 21
+CIC_WINDOW_DAYS = 9
+TOTAL_RESOLUTION_DAYS = 30
+
+HIGH_CONFIDENCE_THRESHOLD = 0.80
+MEDIUM_CONFIDENCE_THRESHOLD = 0.65
+

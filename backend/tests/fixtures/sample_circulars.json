@@ -1,0 +1,13 @@
+[
+  {
+    "title": "Sample RBI Master Direction",
+    "source_layer": "RBI_MASTER",
+    "content": "The Credit Institution has 21 calendar days and the CIC has 9 calendar days."
+  },
+  {
+    "title": "Sample RBI Circular",
+    "source_layer": "RBI_CIRCULAR",
+    "content": "Compensation of Rs.100 per day is payable to the consumer for delay."
+  }
+]
+
