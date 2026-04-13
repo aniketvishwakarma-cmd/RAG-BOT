@@ -1,4 +1,4 @@
-import { KnowledgeGraphViewer } from '../components/graph/KnowledgeGraphViewer'
+import { KnowledgeGraphViewerV2 } from '../components/graph/KnowledgeGraphViewerV2'
 
 export default function GraphPage() {
   return (
@@ -7,7 +7,7 @@ export default function GraphPage() {
         <h1 className="text-2xl font-semibold text-slate-900">Knowledge graph</h1>
         <p className="text-sm text-slate-500">Document lineage, clause references, and graph-augmented retrieval paths.</p>
       </div>
-      <KnowledgeGraphViewer />
+      <KnowledgeGraphViewerV2 />
     </div>
   )
 }
