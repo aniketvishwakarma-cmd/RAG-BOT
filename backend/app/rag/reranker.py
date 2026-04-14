@@ -2,12 +2,16 @@ from __future__ import annotations
 
 from typing import List
 
+import structlog
+
 try:
     import cohere
 except Exception:  # pragma: no cover
     cohere = None
 
 from app.core.config import settings
+
+logger = structlog.get_logger()
 
 
 class CohereReranker:
@@ -18,18 +22,25 @@ class CohereReranker:
         if not chunks:
             return []
         if self.client:
-            response = self.client.rerank(
-                model=settings.COHERE_RERANK_MODEL,
-                query=query,
-                documents=[chunk["content"] for chunk in chunks],
-                top_n=min(top_n, len(chunks)),
-            )
-            reranked = []
-            for result in response.results:
-                chunk = dict(chunks[result.index])
-                chunk["rerank_score"] = float(result.relevance_score)
-                reranked.append(chunk)
-            return reranked
+            try:
+                response = self.client.rerank(
+                    model=settings.COHERE_RERANK_MODEL,
+                    query=query,
+                    documents=[chunk["content"] for chunk in chunks],
+                    top_n=min(top_n, len(chunks)),
+                )
+                reranked = []
+                for result in response.results:
+                    chunk = dict(chunks[result.index])
+                    chunk["rerank_score"] = float(result.relevance_score)
+                    reranked.append(chunk)
+                return reranked
+            except Exception as exc:
+                logger.warning(
+                    "rerank_fallback_enabled",
+                    model=settings.COHERE_RERANK_MODEL,
+                    error=str(exc),
+                )
 
         query_terms = set(query.lower().split())
         scored = []

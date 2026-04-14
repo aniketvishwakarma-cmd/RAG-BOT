@@ -168,7 +168,8 @@ class RegulatoryKnowledgeGraph:
                 "page_no": chunk.page_no,
                 "heading": chunk.heading,
                 "priority_rank": chunk.priority_rank,
-                "fused_score": 0.5,
+                "fused_score": 0.05,
+                "relevance_score": 0.05,
                 "from_graph": True,
             }
             for chunk in chunks

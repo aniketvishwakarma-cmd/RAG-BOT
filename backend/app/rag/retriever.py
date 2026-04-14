@@ -39,8 +39,10 @@ class VectorRetriever:
             SELECT
                 c.id, c.content, c.source_layer, c.document_id, c.section_no, c.clause_no,
                 c.paragraph_no, c.page_no, c.heading, c.priority_rank, c.token_count,
+                d.title AS document_name,
                 1 - (c.embedding <=> :embedding) AS similarity_score
             FROM chunks c
+            LEFT JOIN documents d ON d.id = c.document_id
             WHERE c.is_superseded = false
             {layer_clause}
             ORDER BY c.embedding <=> :embedding

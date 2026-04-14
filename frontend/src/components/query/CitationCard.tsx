@@ -24,7 +24,10 @@ export function CitationCard({ citation, index }: Props) {
           </span>
           <span className="text-xs font-medium text-slate-500">{citation.source_name}</span>
         </div>
-        <span className="text-xs text-slate-400">{(citation.relevance_score * 100).toFixed(0)}% relevant</span>
+        <div className="text-right text-xs text-slate-400">
+          <div>{(citation.relevance_score * 100).toFixed(0)}% relevant</div>
+          <div>{((citation.faithfulness_score ?? 1) * 100).toFixed(0)}% source support</div>
+        </div>
       </div>
       <div className="mb-3 flex flex-wrap gap-2 font-mono text-xs text-slate-600">
         {citation.section_no && <span className="rounded-md bg-slate-50 px-2 py-1">Section: {citation.section_no}</span>}
@@ -33,6 +36,11 @@ export function CitationCard({ citation, index }: Props) {
         {citation.page_no && <span className="rounded-md bg-slate-50 px-2 py-1">Page: {citation.page_no}</span>}
       </div>
       <blockquote className="border-l-2 border-slate-300 pl-3 text-sm italic leading-7 text-slate-700">"{citation.excerpt}"</blockquote>
+      {(citation.citation_mismatch || (citation.faithfulness_score ?? 1) < 0.4) && (
+        <div className="mt-3 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-800">
+          Citation Mismatch Warning: This citation text may not directly support the answer above. Verify against the original document before use.
+        </div>
+      )}
     </div>
   )
 }

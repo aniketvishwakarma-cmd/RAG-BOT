@@ -34,4 +34,6 @@ class QueryResponse(BaseModel):
     latency_ms: int
     layer_sources_used: List[str] = Field(default_factory=list)
     insufficient_evidence: bool = False
+    citation_mismatch: bool = False
+    citation_warning: Optional[str] = None
 

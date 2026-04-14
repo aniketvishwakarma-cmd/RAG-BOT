@@ -70,6 +70,11 @@ export default function QueryPage() {
                   Low confidence. Auditor review is recommended before operational use.
                 </div>
               )}
+              {response.citation_mismatch && (
+                <div className="mb-3 rounded-lg border border-rose-300 bg-rose-50 px-4 py-3 text-sm font-medium leading-6 text-rose-700">
+                  CITATION MISMATCH DETECTED: The answer may have been generated from model memory rather than the retrieved documents. Do not use for compliance decisions without manual verification.
+                </div>
+              )}
               {response.resolution_note && <ConflictAlert note={response.resolution_note} />}
             </div>
             <ResponsePanel answer={response.answer} keyFacts={response.key_facts} insufficientEvidence={response.insufficient_evidence} />

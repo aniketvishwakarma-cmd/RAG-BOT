@@ -46,8 +46,8 @@ class Settings(BaseSettings):
 
     RETRIEVAL_TOP_K: int = 50
     RERANK_TOP_N: int = 8
-    VECTOR_WEIGHT: float = 0.70
-    BM25_WEIGHT: float = 0.30
+    VECTOR_WEIGHT: float = 0.40
+    BM25_WEIGHT: float = 0.60
     MIN_CONFIDENCE_THRESHOLD: float = 0.65
     HITL_CONFIDENCE_TRIGGER: float = 0.75
 

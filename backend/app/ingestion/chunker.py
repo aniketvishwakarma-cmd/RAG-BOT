@@ -4,7 +4,11 @@ import re
 import uuid
 from typing import Dict, List
 
+import structlog
+
 from app.core.config import settings
+
+logger = structlog.get_logger()
 
 
 class RegulatoryChunker:
@@ -14,6 +18,33 @@ class RegulatoryChunker:
         r"^(Section\s+\d+)\s*[:\-]?\s*(.+)$",
         r"^([A-Z]\.\d+)\s+(.+)$",
     ]
+    SECTION_KEYWORDS = {
+        "dispute resolution": [
+            "dispute",
+            "complaint",
+            "resolution",
+            "calendar days",
+            "credit institution",
+            "credit information",
+            "ci",
+            "cic",
+            "compensation",
+        ],
+        "match logic": [
+            "match",
+            "algorithm",
+            "search",
+            "periodic review",
+            "half-yearly",
+        ],
+        "data quality": [
+            "dqi",
+            "data quality",
+            "index",
+            "review",
+            "management",
+        ],
+    }
 
     def chunk(self, text: str, doc_meta: dict) -> List[Dict]:
         chunks = []
@@ -74,12 +105,22 @@ class RegulatoryChunker:
         return result
 
     def _build_chunk(self, text: str, section: Dict, doc_meta: dict) -> Dict:
+        text, section = self._validate_section_text(text, dict(section))
         section_no = section.get("section_no", "")
         clause_parts = section_no.split(".") if section_no else []
+        bm25_text = " ".join(
+            value
+            for value in [
+                str(section_no or ""),
+                str(section.get("heading") or ""),
+                text,
+            ]
+            if value
+        ).lower()
         return {
             "id": str(uuid.uuid4()),
             "content": text,
-            "bm25_text": text.lower(),
+            "bm25_text": bm25_text,
             "token_count": len(text.split()),
             "source_layer": doc_meta.get("source_layer", "UNKNOWN"),
             "document_id": doc_meta.get("document_id"),
@@ -93,3 +134,27 @@ class RegulatoryChunker:
             "priority_rank": doc_meta.get("priority_rank", 4),
             "is_superseded": False,
         }
+
+    def _validate_section_text(self, text: str, metadata: Dict) -> tuple[str, Dict]:
+        section_title = str(metadata.get("heading") or "")
+        chunk_text = text.lower()
+
+        expected_keywords = []
+        for section, keywords in self.SECTION_KEYWORDS.items():
+            if section in section_title.lower():
+                expected_keywords = keywords
+                break
+
+        if expected_keywords:
+            matches = sum(1 for keyword in expected_keywords if keyword in chunk_text)
+            if matches == 0:
+                metadata["section_mismatch"] = True
+                logger.warning(
+                    "chunk_section_mismatch",
+                    section_title=section_title,
+                    section_no=metadata.get("section_no"),
+                    expected_keywords=expected_keywords,
+                    preview=text[:200],
+                )
+
+        return text, metadata

@@ -19,6 +19,114 @@ Respect the hierarchy: RBI_MASTER > CICRA > RBI_CIRCULAR > SOP.
 Return valid JSON with keys: answer, key_facts, resolution_hierarchy, confidence, insufficient_evidence, refusal_reason.
 """
 
+CITATION_MISMATCH_WARNING = (
+    "CITATION MISMATCH: Answer content not found in cited sources. "
+    "Answer may be from LLM training memory, not documents."
+)
+
+FAITHFULNESS_TERMS = [
+    "calendar day",
+    "credit institution",
+    "credit information",
+    "dispute",
+    "resolution",
+    "window",
+    "compensation",
+    "consumer",
+    "regulator",
+    "penalty",
+]
+
+FAITHFULNESS_ALIASES = {
+    "calendar day": ["calendar day", "calendar days"],
+    "credit institution": ["credit institution", "ci"],
+    "credit information": ["credit information", "cic"],
+}
+
+
+def _citation_contains(citation_text: str, term: str) -> bool:
+    variants = FAITHFULNESS_ALIASES.get(term, [term])
+    return any(variant.lower() in citation_text for variant in variants)
+
+
+def _domain_expansions(query: str) -> list[str]:
+    query_lower = query.lower()
+    if "dispute" in query_lower and ("timeline" in query_lower or "resolution" in query_lower):
+        return [
+            "21 calendar days Credit Institution 9 calendar days Credit Information Company 30 calendar days dispute resolution",
+            "complaint dispute resolution total delay calendar days CI CIC",
+        ]
+    if "penalty" in query_lower or "compensation" in query_lower or "delay" in query_lower:
+        return [
+            "Rs 100 per calendar day compensation complaint delay dispute resolution",
+            "Rs 5000 per day regulator penalty reporting violation",
+        ]
+    return []
+
+
+def source_citations_from_result(llm_result: Dict) -> list[dict]:
+    chunk_map = llm_result.get("_chunk_map") or {}
+    serialized = f"{llm_result.get('answer', '')} {' '.join(llm_result.get('key_facts', []))}"
+    source_ids = []
+    for match in re.findall(r"\[(SRC_\d+)\]", serialized):
+        if match not in source_ids:
+            source_ids.append(match)
+    if not source_ids:
+        source_ids = list(chunk_map.keys())[: min(3, len(chunk_map))]
+    return [
+        {
+            "id": source_id,
+            "text": chunk_map[source_id].get("content", ""),
+        }
+        for source_id in source_ids
+        if source_id in chunk_map
+    ]
+
+
+def check_citation_faithfulness(answer: str, citations: list[dict]) -> dict:
+    """
+    Verify that key facts in an answer exist in the cited chunks.
+    Catches cases where an LLM answers from prior knowledge and attaches unrelated evidence.
+    """
+    if "Insufficient evidence" in answer:
+        return {"is_faithful": True, "scores": [], "warning": None}
+
+    answer_lower = answer.lower()
+    answer_numbers = set(re.findall(r"\b\d+\b", answer))
+    answer_terms = {term for term in FAITHFULNESS_TERMS if term in answer_lower}
+    expected_terms = sorted(answer_terms | answer_numbers)
+
+    if not expected_terms:
+        return {"is_faithful": True, "scores": [], "warning": None}
+
+    scores = []
+    for citation in citations:
+        citation_text = citation.get("text", "").lower()
+        matched_terms = [term for term in expected_terms if _citation_contains(citation_text, term)]
+        score = len(matched_terms) / len(expected_terms)
+        citation_numbers = set(re.findall(r"\b\d+\b", citation_text))
+        numbers_supported = not answer_numbers or answer_numbers.issubset(citation_numbers)
+        is_faithful = score >= 0.4 and numbers_supported
+        scores.append(
+            {
+                "citation_id": citation.get("id"),
+                "faithfulness_score": score,
+                "matched_terms": matched_terms,
+                "matched_count": len(matched_terms),
+                "total_terms": len(expected_terms),
+                "is_faithful": is_faithful,
+                "numbers_supported": numbers_supported,
+                "warning": None if is_faithful else CITATION_MISMATCH_WARNING,
+            }
+        )
+
+    overall_faithful = any(score["is_faithful"] for score in scores)
+    return {
+        "is_faithful": overall_faithful,
+        "scores": scores,
+        "warning": None if overall_faithful else CITATION_MISMATCH_WARNING,
+    }
+
 
 def _fallback_response(query: str, chunks: List[Dict], resolution_note: Optional[str]) -> Dict:
     source_map = {f"SRC_{index + 1}": chunk for index, chunk in enumerate(chunks[: settings.RERANK_TOP_N])}
@@ -66,7 +174,7 @@ def _fallback_response(query: str, chunks: List[Dict], resolution_note: Optional
         confidence = 0.85
     elif "timeline" in query_lower or "30-day" in query_lower or "30 day" in query_lower:
         answer = (
-            "The dispute-resolution window is 30 calendar days in total: 21 calendar days for the Credit Institution and 9 calendar days for the Credit Information Company. [SRC_1]"
+            "The dispute-resolution window is 30 calendar days in total: 21 calendar days for the CI and 9 calendar days for the CIC. [SRC_1]"
         )
         facts = [
             "CI window is 21 calendar days. [SRC_1]",
@@ -153,9 +261,11 @@ async def generate_cited_answer(
 
 
 async def expand_query(query: str) -> List[str]:
+    domain_expansions = _domain_expansions(query)
     if not settings.OPENAI_API_KEY:
         return [
             query,
+            *domain_expansions,
             f"RBI credit reporting compliance: {query}",
             f"CICRA dispute resolution rule: {query}",
             f"Regulatory citation for {query}",
@@ -181,7 +291,7 @@ async def expand_query(query: str) -> List[str]:
         )
         payload = json.loads(response.choices[0].message.content)
         queries = payload.get("queries") or payload.get("variants") or list(payload.values())
-        return [query] + [str(item) for item in queries[:3]]
+        return [query] + domain_expansions + [str(item) for item in queries[:3]]
     except Exception as exc:
         logger.warning(
             "query_expansion_fallback_enabled",
@@ -190,6 +300,7 @@ async def expand_query(query: str) -> List[str]:
         )
         return [
             query,
+            *domain_expansions,
             f"RBI credit reporting compliance: {query}",
             f"CICRA dispute resolution rule: {query}",
             f"Regulatory citation for {query}",

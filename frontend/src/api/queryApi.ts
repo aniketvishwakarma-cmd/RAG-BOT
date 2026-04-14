@@ -8,6 +8,7 @@ export interface QueryRequest {
 }
 
 export interface CitationCard {
+  source_id?: string
   source_name: string
   source_layer: string
   layer_priority: number
@@ -17,6 +18,9 @@ export interface CitationCard {
   page_no?: number
   excerpt: string
   relevance_score: number
+  faithfulness_score: number
+  citation_mismatch: boolean
+  citation_warning?: string
 }
 
 export interface QueryResponse {
@@ -31,6 +35,8 @@ export interface QueryResponse {
   latency_ms: number
   layer_sources_used: string[]
   insufficient_evidence: boolean
+  citation_mismatch: boolean
+  citation_warning?: string
 }
 
 export const queryApi = {

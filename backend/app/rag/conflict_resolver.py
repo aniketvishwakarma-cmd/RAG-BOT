@@ -23,11 +23,19 @@ class ConflictResolver:
         return self._sort(resolved), note
 
     def _sort(self, chunks: List[Dict]) -> List[Dict]:
+        def evidence_score(chunk: Dict) -> float:
+            return max(
+                float(chunk.get("exact_match_score", 0.0)),
+                float(chunk.get("relevance_score", 0.0)),
+                float(chunk.get("rerank_score", 0.0)),
+                float(chunk.get("fused_score", 0.0)),
+            )
+
         return sorted(
             chunks,
             key=lambda chunk: (
+                -evidence_score(chunk),
                 self.LAYER_PRIORITY.get(chunk.get("source_layer", "SOP"), 99),
-                -(chunk.get("rerank_score", chunk.get("fused_score", 0.0))),
             ),
         )
 

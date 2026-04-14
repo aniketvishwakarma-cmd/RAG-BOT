@@ -68,7 +68,7 @@ export function DocumentUploader({ onUploaded }: Props) {
           {(isUploading || uploadProgress === 100) && (
             <div className="h-2 overflow-hidden rounded-full bg-slate-200">
               <div
-                className={`h-full rounded-full transition-all duration-300 ${uploadProgress >= 100 && isUploading ? 'animate-pulse bg-emerald-500' : 'bg-emerald-600'}`}
+                className={`h-full rounded-full transition-all duration-7000 ${uploadProgress >= 100 && isUploading ? 'animate-pulse bg-emerald-500' : 'bg-emerald-600'}`}
                 style={{ width: `${Math.max(uploadProgress, 6)}%` }}
               />
             </div>
