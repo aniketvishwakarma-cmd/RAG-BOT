@@ -11,12 +11,12 @@ CIBIL-RegBot is a knowledge-graph enhanced regulatory compliance RAG system for 
 
 ## Quick start
 
-1. Copy [backend/.env.example](/D:/Regulatory Compliance RAG MVP/cibil-regbot/backend/.env.example) to `backend/.env` and fill in keys.
-2. Start infrastructure with `docker compose up -d postgres redis`.
+1. Copy `backend/.env.example` to `backend/.env` and fill in keys.
+2. Make sure PostgreSQL and Redis are running locally or point `POSTGRES_URL` and `REDIS_URL` in `backend/.env` to your services.
 3. Initialize the database with `python backend/scripts/init_db.py`.
 4. Seed sample data with `python backend/scripts/seed_data.py`.
-5. Run the backend with `uvicorn app.main:app --reload --port 8000` from [backend](/D:/Regulatory Compliance RAG MVP/cibil-regbot/backend).
-6. Run the frontend with `npm install` and `npm run dev` from [frontend](/D:/Regulatory Compliance RAG MVP/cibil-regbot/frontend).
+5. Run the backend with `uvicorn app.main:app --reload --port 8000` from `backend`.
+6. Run the frontend with `npm install` and `npm run dev` from `frontend`.
 
 ## Core behavior
 
@@ -28,9 +28,9 @@ CIBIL-RegBot is a knowledge-graph enhanced regulatory compliance RAG system for 
 
 ## Project map
 
-- Backend app entry: [backend/app/main.py](/D:/Regulatory Compliance RAG MVP/cibil-regbot/backend/app/main.py)
-- RAG orchestrator: [backend/app/rag/pipeline.py](/D:/Regulatory Compliance RAG MVP/cibil-regbot/backend/app/rag/pipeline.py)
-- Ingestion orchestration: [backend/app/services/ingestion_service.py](/D:/Regulatory Compliance RAG MVP/cibil-regbot/backend/app/services/ingestion_service.py)
-- Frontend query page: [frontend/src/pages/QueryPage.tsx](/D:/Regulatory Compliance RAG MVP/cibil-regbot/frontend/src/pages/QueryPage.tsx)
+- Backend app entry: `backend/app/main.py`
+- RAG orchestrator: `backend/app/rag/pipeline.py`
+- Ingestion orchestration: `backend/app/services/ingestion_service.py`
+- Frontend query page: `frontend/src/pages/QueryPage.tsx`
 
 # RAG-BOT

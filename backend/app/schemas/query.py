@@ -19,7 +19,7 @@ class QueryRequest(BaseModel):
     query: str = Field(..., min_length=5, max_length=2000)
     layer_filter: Optional[List[DocumentLayer]] = None
     bypass_cache: bool = False
-    include_graph_context: bool = True
+    include_graph_context: bool = False
 
 
 class QueryResponse(BaseModel):
@@ -36,4 +36,7 @@ class QueryResponse(BaseModel):
     insufficient_evidence: bool = False
     citation_mismatch: bool = False
     citation_warning: Optional[str] = None
+    source_relevance_score: Optional[float] = None
+    source_relevance_warning: Optional[str] = None
+    grounding_score: Optional[float] = None
 

@@ -37,6 +37,9 @@ export interface QueryResponse {
   insufficient_evidence: boolean
   citation_mismatch: boolean
   citation_warning?: string
+  source_relevance_score?: number
+  source_relevance_warning?: string
+  grounding_score?: number
 }
 
 export const queryApi = {

@@ -4,7 +4,7 @@ from typing import Dict, List
 
 import networkx as nx
 import structlog
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.db.models import Chunk, Document, GraphRelation
 
@@ -152,6 +152,7 @@ class RegulatoryKnowledgeGraph:
 
         chunks = (
             self.db.query(Chunk)
+            .options(joinedload(Chunk.document))
             .filter(Chunk.id.in_(list(new_ids)[:10]), Chunk.is_superseded.is_(False))
             .all()
         )

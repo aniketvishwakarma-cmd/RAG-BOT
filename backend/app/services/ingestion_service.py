@@ -17,6 +17,7 @@ from app.ingestion.embedder import EmbeddingService
 from app.ingestion.graph_builder import GraphBuilder
 from app.ingestion.parser import DocumentParser
 from app.ingestion.structure_extractor import StructureExtractor
+from app.rag.hybrid_search import HybridSearchEngine
 
 
 class IngestionService:
@@ -89,6 +90,7 @@ class IngestionService:
         stored_chunks = self.chunk_repo.bulk_create(chunk_dicts)
         self.document_repo.update_chunk_count(document.id, len(stored_chunks))
         self.bm25_indexer.rebuild(self.chunk_repo.list_active())
+        HybridSearchEngine.invalidate_bm25_cache()
         self.graph_builder.build_for_document(document.id, chunk_dicts)
 
         return {

@@ -33,7 +33,7 @@ export default function QueryPage() {
     mutation.mutate({
       query: query.trim(),
       layer_filter: selectedLayers.length > 0 ? selectedLayers : undefined,
-      include_graph_context: true
+      include_graph_context: false
     })
   }
 
@@ -62,6 +62,7 @@ export default function QueryPage() {
                 <div className="flex gap-2 text-xs text-slate-500">
                   <span>{response.latency_ms}ms</span>
                   <span>{response.citations.length} citations</span>
+                  {response.grounding_score !== undefined && <span>{Math.round(response.grounding_score * 100)}% grounded</span>}
                   <span>{response.layer_sources_used.join(', ')}</span>
                 </div>
               </div>
@@ -73,6 +74,11 @@ export default function QueryPage() {
               {response.citation_mismatch && (
                 <div className="mb-3 rounded-lg border border-rose-300 bg-rose-50 px-4 py-3 text-sm font-medium leading-6 text-rose-700">
                   CITATION MISMATCH DETECTED: The answer may have been generated from model memory rather than the retrieved documents. Do not use for compliance decisions without manual verification.
+                </div>
+              )}
+              {response.source_relevance_warning && (
+                <div className="mb-3 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm font-medium leading-6 text-amber-800">
+                  SOURCE RELEVANCE WARNING: {response.source_relevance_warning}
                 </div>
               )}
               {response.resolution_note && <ConflictAlert note={response.resolution_note} />}

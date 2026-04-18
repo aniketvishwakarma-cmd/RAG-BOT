@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from contextlib import asynccontextmanager
 
 import structlog
@@ -13,15 +14,40 @@ from app.api.routes import audit, documents, graph, health, ingest, query
 from app.core.config import settings
 from app.core.logger import configure_logging
 from app.db.session import init_db
+from app.db.session import SessionLocal
+from app.ingestion.embedder import LocalEmbedder, local_embeddings_available
+from app.rag.hybrid_search import HybridSearchEngine
 
 configure_logging()
 logger = structlog.get_logger()
+
+
+def _warm_retrieval_assets() -> None:
+    if local_embeddings_available():
+        try:
+            LocalEmbedder.get_instance().embed_text("warm up local regulatory retrieval model")
+            logger.info("local_embedding_model_warmed", model=settings.LOCAL_EMBEDDING_MODEL)
+        except Exception as exc:
+            logger.warning("local_embedding_model_warmup_failed", error=str(exc))
+    db = SessionLocal()
+    try:
+        HybridSearchEngine(db)
+        logger.info("bm25_index_warmed")
+    except Exception as exc:
+        logger.warning("bm25_index_warmup_failed", error=str(exc))
+    finally:
+        db.close()
+
+
+async def _warm_retrieval_assets_background() -> None:
+    await asyncio.to_thread(_warm_retrieval_assets)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("startup", app=settings.APP_NAME, version=settings.APP_VERSION)
     init_db()
+    asyncio.create_task(_warm_retrieval_assets_background())
     yield
     logger.info("shutdown")
 

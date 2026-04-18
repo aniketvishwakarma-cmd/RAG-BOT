@@ -15,19 +15,29 @@ logger = structlog.get_logger()
 
 
 class CohereReranker:
+    _disabled = False
+
     def __init__(self) -> None:
-        self.client = cohere.Client(settings.COHERE_API_KEY) if cohere and settings.COHERE_API_KEY else None
+        self.client = (
+            cohere.Client(settings.COHERE_API_KEY, timeout=min(settings.EXTERNAL_PROVIDER_TIMEOUT_SECONDS, 3.0))
+            if cohere and settings.COHERE_API_KEY
+            else None
+        )
 
     async def rerank(self, query: str, chunks: List[dict], top_n: int = 8) -> List[dict]:
         if not chunks:
             return []
-        if self.client:
+        if self.client and not self._disabled:
             try:
                 response = self.client.rerank(
                     model=settings.COHERE_RERANK_MODEL,
                     query=query,
                     documents=[chunk["content"] for chunk in chunks],
                     top_n=min(top_n, len(chunks)),
+                    request_options={
+                        "timeout_in_seconds": int(min(settings.EXTERNAL_PROVIDER_TIMEOUT_SECONDS, 3.0)),
+                        "max_retries": 0,
+                    },
                 )
                 reranked = []
                 for result in response.results:
@@ -36,22 +46,17 @@ class CohereReranker:
                     reranked.append(chunk)
                 return reranked
             except Exception as exc:
+                self.__class__._disabled = True
                 logger.warning(
                     "rerank_fallback_enabled",
                     model=settings.COHERE_RERANK_MODEL,
                     error=str(exc),
                 )
 
-        query_terms = set(query.lower().split())
-        scored = []
-        for chunk in chunks:
-            overlap = len(query_terms & set(chunk["content"].lower().split()))
-            scored.append((overlap / max(len(query_terms), 1) + chunk.get("fused_score", 0.0), chunk))
-        scored.sort(key=lambda item: item[0], reverse=True)
         output = []
-        for score, chunk in scored[:top_n]:
+        for chunk in chunks[:top_n]:
             row = dict(chunk)
-            row["rerank_score"] = score
+            row["rerank_score"] = float(row.get("relevance_score", row.get("fused_score", 0.0)))
             output.append(row)
         return output
 

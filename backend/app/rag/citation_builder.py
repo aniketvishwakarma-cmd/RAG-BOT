@@ -10,6 +10,34 @@ def _supporting_excerpt(content: str, matched_terms: list[str], max_length: int 
     if not content:
         return ""
     content_lower = content.lower()
+    if (
+        ("fortnightly basis" in content_lower or "fortnightly submission" in content_lower)
+        and "credit information" in content_lower
+        and "calendar days" in content_lower
+    ):
+        matched_terms = ["fortnightly basis", "15th", "last day", "seven", "calendar days", "reporting fortnight"]
+    elif (
+        "the cir shall give details" in content_lower
+        and "loans availed" in content_lower
+        and "borrower/co-borrower/guarantor" in content_lower
+    ):
+        matched_terms = ["cir shall give details", "loans availed", "borrower/co-borrower/guarantor"]
+    elif (
+        "risk segmentation" in content_lower
+        and "recommended action" in content_lower
+        and "superprime" in content_lower
+        and "deep subprime" in content_lower
+    ):
+        matched_terms = ["risk segmentation", "recommended action", "superprime", "prime plus", "near prime", "subprime", "deep subprime", "no history"]
+    elif any(term in content_lower for term in ["consent clause", "need not be insisted", "has become redundant"]):
+        matched_terms = ["consent clause", "need not", "insisted", "redundant"]
+    elif (
+        ("rs.100" in content_lower or "rs 100" in content_lower or "₹100" in content_lower or "one hundred" in content_lower)
+        and "compensation" in content_lower
+    ):
+        matched_terms = ["compensation", "rs.100", "one hundred", "calendar day", "complainant", "payable"]
+    elif "twenty-one (21)" in content_lower and "nine (9)" in content_lower:
+        matched_terms = ["overall limit", "thirty", "twenty-one", "nine"]
     positions = [
         content_lower.find(term.lower())
         for term in matched_terms

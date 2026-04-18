@@ -42,12 +42,15 @@ class Settings(BaseSettings):
     COHERE_API_KEY: str = ""
     COHERE_RERANK_MODEL: str = "rerank-v3.5"
     ANTHROPIC_API_KEY: str = ""
-    ANTHROPIC_LLM_MODEL: str = "claude-3-5-sonnet-latest"
+    ANTHROPIC_LLM_MODEL: str = "claude-sonnet-4-6"
+    LOCAL_EMBEDDING_MODEL: str = "BAAI/bge-base-en-v1.5"
+    OPENAI_TIMEOUT_SECONDS: float = 10.0
+    EXTERNAL_PROVIDER_TIMEOUT_SECONDS: float = 10.0
 
-    RETRIEVAL_TOP_K: int = 50
-    RERANK_TOP_N: int = 8
-    VECTOR_WEIGHT: float = 0.40
-    BM25_WEIGHT: float = 0.60
+    RETRIEVAL_TOP_K: int = 30
+    RERANK_TOP_N: int = 5
+    VECTOR_WEIGHT: float = 0.30
+    BM25_WEIGHT: float = 0.70
     MIN_CONFIDENCE_THRESHOLD: float = 0.65
     HITL_CONFIDENCE_TRIGGER: float = 0.75
 

@@ -1,6 +1,9 @@
 backend/.env
 backend/uvicorn.out.log
 backend/uvicorn.err.log
+backend/uvicorn-debug*.log
 backend/.pytest_cache/
 backend/**/__pycache__/
 backend/**/*.py[cod]
+frontend/node_modules/
+frontend/dist/

@@ -24,7 +24,7 @@ class DocumentParser:
         with pdfplumber.open(path) as pdf:
             for index, page in enumerate(pdf.pages, start=1):
                 text = page.extract_text() or ""
-                pages.append(text + f"\n- {index} -\n")
+                pages.append(f"\n- {index} -\n{text}")
         return "\n".join(pages), len(pages)
 
     def _parse_docx(self, path: Path) -> tuple[str, int]:

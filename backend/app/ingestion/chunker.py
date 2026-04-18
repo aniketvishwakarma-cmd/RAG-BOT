@@ -13,6 +13,7 @@ logger = structlog.get_logger()
 
 class RegulatoryChunker:
     SECTION_PATTERNS = [
+        r"^(\d{1,2})\.\s+([A-Z][A-Za-z].+)$",
         r"^(\d+\.\d+(?:\.\d+)?(?:\.\d+)?)\s+(.+)$",
         r"^(Chapter\s+[IVXLC]+)\s*[:\-]?\s*(.+)$",
         r"^(Section\s+\d+)\s*[:\-]?\s*(.+)$",
@@ -57,6 +58,22 @@ class RegulatoryChunker:
         current = {"heading": None, "section_no": None, "text": "", "page_no": None, "chapter": None}
 
         for line in text.split("\n"):
+            page_match = re.match(r"^\s*[-â€“]\s*(\d+)\s*[-â€“]\s*$", line)
+            if page_match:
+                page_no = int(page_match.group(1))
+                if current["text"].strip():
+                    sections.append(dict(current))
+                    current = {
+                        "heading": current.get("heading"),
+                        "section_no": current.get("section_no"),
+                        "text": "",
+                        "page_no": page_no,
+                        "chapter": current.get("chapter"),
+                    }
+                else:
+                    current["page_no"] = page_no
+                continue
+
             matched = False
             for pattern in self.SECTION_PATTERNS:
                 match = re.match(pattern, line.strip(), re.IGNORECASE)
